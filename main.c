@@ -1,52 +1,40 @@
 #include "monty.h"
-#include <stdio.h>
-
-bus_t bus = {NULL, NULL, NULL, 0};
-
+global_t var = {NULL, NULL, NULL, 0, 0};
 /**
-* main - monty code_interpret
-* @argc: nbr of arg
-* @argv: monty file loction
-* Return: 0 if  success
-*/
-int main(int argc, char *argv[])
+ *  main -  interpreter for Monty ByteCodes files
+ *  @argc: Number of paramethers
+ *  @argv: Pointer to all the paramethers
+ *
+ *  Return: Always 0
+ */
+int main(int argc, char **argv)
 {
-	char *contnt;
-	FILE *file;
-	size_t size = 0;
-	ssize_t read_line = 1;
-	stack_t *stack = NULL;
-	unsigned int cntr = 0;
+	size_t line_buf_size = 0;
 
+	var.getl_info = NULL;
+	var.stack_head = NULL;
+	var.n_lines = 0;
 	if (argc != 2)
 	{
 		fprintf(stderr, "USAGE: monty file\n");
 		exit(EXIT_FAILURE);
 	}
-
-	file = fopen(argv[1], "r");
-	bus.file = file;
-
-	if (!file)
+	var.fp_struct = fopen(argv[1], "r");
+	if (!var.fp_struct)
 	{
 		fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
-
-	while (read_line > 0)
+	while (getline(&var.getl_info, &line_buf_size, var.fp_struct) != EOF)
 	{
-		contnt = NULL;
-		read_line = _getline(&contnt, &size, file);
-		bus.contnt = contnt;
-		cntr++;
-		if (read_line > 0)
-		{
-			execute(contnt, &stack, cntr, file);
-		}
-		free(contnt);
+		var.n_lines++;
+		if (line_validator(var.getl_info) == 1)
+			continue;
+		/*split_str(var.getl_info);*/
+		execute_opcode(split_str(var.getl_info));
 	}
-	free_stack(stack);
-	fclose(file);
-	return (0);
+	free(var.getl_info);
+	handle_dlist_head(var.stack_head);
+	fclose(var.fp_struct);
+	return (EXIT_SUCCESS);
 }
-
